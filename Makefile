@@ -1,0 +1,2 @@
+harvest:
+	python harvest.py
