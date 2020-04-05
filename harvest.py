@@ -1,6 +1,7 @@
 """
 List MBC sets
 """
+import json
 import logging
 import requests
 
@@ -14,6 +15,46 @@ DLIBRA_SERVER = 'http://mbc.cyfrowemazowsze.pl/'
 OAI_ENDPOINT = f'{DLIBRA_SERVER}dlibra/oai-pmh-repository.xml'
 
 
+def get_set(instance: Sickle, set_name: str) -> List[models.Record]:
+    return instance.ListRecords(
+        metadataPrefix='oai_dc',
+        set=set_name
+    )
+
+
+def get_content_url(record: models.Record) -> str:
+    """
+    Gets the full content URL for a given record
+    """
+    logger = logging.getLogger('get_content_url')
+
+    # ('identifier', ['http://mbc.cyfrowemazowsze.pl/Content/59990', ...
+    content_xml_url = record.metadata['identifier'][0]
+    logger.debug('Fetching content URL from <%s> ...', content_xml_url)
+
+    """
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    <object-presentation>
+    <presentation-elements>
+    <presentation-element position="0">
+    <full-image><![CDATA[00064995_0000.jpg]]></full-image>
+    </presentation-element>
+    </presentation-elements>
+    </object-presentation>
+    """
+    resp = OAIResponse(http_response=requests.get(content_xml_url), params=dict(verb='GetContent'))
+
+    # 00064995_0000.jpg
+    image_node: ElementBase = resp.xml.find('.//full-image')
+
+    # this will become
+    # http://mbc.cyfrowemazowsze.pl/Content/61991/00066224_0000.jpg
+    url = f'{content_xml_url}/{image_node.text}'
+    logger.debug('Content URL: <%s>', url)
+
+    return url
+
+
 def main():
     logger = logging.getLogger('oai-harvester')
     logger.info('Using <%s> OAI endpoint',  OAI_ENDPOINT)
@@ -24,7 +65,7 @@ def main():
     # for idx, set_ in enumerate(harvester.ListSets()):
     #     logger.info('Set #%d found: %r', idx+1, set_)
 
-    resource_id = 'oai:mbc.cyfrowemazowsze.pl:43271'
+    # resource_id = 'oai:mbc.cyfrowemazowsze.pl:43271'
 
     # https://www.wbc.poznan.pl/dlibra/oai-pmh-repository.xml?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:www.wbc.poznan.pl:168305
     # <setSpec>MDL:CD:Warwilustrpras</setSpec>
@@ -34,9 +75,7 @@ def main():
     # https://www.wbc.poznan.pl/dlibra/oai-pmh-repository.xml?verb=ListRecords&metadataPrefix=oai_dc&set=rootCollection:wbc:ContemporaryRegionalMagazines
     set_name = 'MDL:CD:Warwilustrpras'
 
-    records = harvester.ListRecords(metadataPrefix='oai_dc', set=set_name)  # type: List[models.Record]
-
-    for idx, record in enumerate(records):
+    for idx, record in enumerate(get_set(harvester, set_name)):
         logger.info('---')
         logger.info('Record #%d found: %r', idx+1, record)
 
@@ -45,39 +84,13 @@ def main():
             record_id = int(str(record.header.identifier).split(':')[-1])
 
             record_meta = dict(
-                record_id=record_id
+                record_id=record_id,
+                title=record.metadata['title'][0],
+                content_url=get_content_url(record),
+                tags=sorted(list(set(record.metadata['subject']))),
             )
 
-            # enumerate metadata
-            for key, value in record:
-                logger.debug(' > %r', (key, value))
-
-                # e.g. http://mbc.cyfrowemazowsze.pl/Content/59991
-                if key == 'identifier':
-                    content_xml_url = value[0]
-                    logger.debug('Fetching content URL from <%s> ...', content_xml_url)
-
-                    """
-                    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-                    <object-presentation>
-                    <presentation-elements>
-                    <presentation-element position="0">
-                    <full-image><![CDATA[00064995_0000.jpg]]></full-image>
-                    </presentation-element>
-                    </presentation-elements>
-                    </object-presentation>
-                    """
-                    resp = OAIResponse(http_response=requests.get(content_xml_url), params=dict(verb='GetContent'))
-
-                    # 00064995_0000.jpg
-                    image_node: ElementBase = resp.xml.find('.//full-image')
-
-                    # this will become
-                    # http://mbc.cyfrowemazowsze.pl/Content/61991/00066224_0000.jpg
-                    record_meta['content_url'] = f'{content_xml_url}/{image_node.text}'
-                    logger.debug('Content URL: <%s>', record_meta['content_url'])
-
-            logger.info('Record metadata: %r', record_meta)
+            logger.info('Record metadata: %s', json.dumps(record_meta, indent=True))
 
         except:
             logger.error('Exception', exc_info=True)
@@ -86,12 +99,6 @@ def main():
         # DEBUG
         if idx > 5:
             break
-
-    #http://mbc.cyfrowemazowsze.pl/dlibra/oai-pmh-repository.xml?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:mbc.cyfrowemazowsze.pl:61991
-    # http://mbc.cyfrowemazowsze.pl/Content/61991/PresentationData.xml
-    # <![CDATA[ 00066229_0000.jpg ]]>
-
-    # http://mbc.cyfrowemazowsze.pl/Content/61991/00066224_0000.jpg
 
 
 if __name__ == "__main__":
