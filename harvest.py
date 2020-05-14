@@ -81,10 +81,12 @@ def main():
 
         # oai:mbc.cyfrowemazowsze.pl:59990
         try:
-            record_id = int(str(record.header.identifier).split(':')[-1])
+            # oai:mbc.cyfrowemazowsze.pl:59990 -> mbc.cyfrowemazowsze.pl
+            source_id = str(record.header.identifier).split(':')[1]
 
             record_meta = dict(
-                record_id=record_id,
+                record_id=record.header.identifier,
+                source_id=source_id,
                 title=record.metadata['title'][0],
                 content_url=get_content_url(record),
                 tags=sorted(list(set(record.metadata['subject']))),
@@ -97,8 +99,8 @@ def main():
             pass
 
         # DEBUG
-        if idx > 5:
-            break
+        # if idx > 5:
+        #     break
 
 
 if __name__ == "__main__":
