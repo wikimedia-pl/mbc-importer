@@ -3,9 +3,11 @@ List MBC sets
 """
 import json
 import logging
+
+import pywikibot
 import requests
 
-from typing import List
+from typing import Iterator
 
 from lxml.etree import ElementBase
 from sickle import Sickle, models, OAIResponse
@@ -15,7 +17,7 @@ DLIBRA_SERVER = 'http://mbc.cyfrowemazowsze.pl/'
 OAI_ENDPOINT = f'{DLIBRA_SERVER}dlibra/oai-pmh-repository.xml'
 
 
-def get_set(instance: Sickle, set_name: str) -> List[models.Record]:
+def get_set(instance: Sickle, set_name: str) -> Iterator[models.Record]:
     return instance.ListRecords(
         metadataPrefix='oai_dc',
         set=set_name
@@ -60,6 +62,12 @@ def main():
     logger.info('Using <%s> OAI endpoint',  OAI_ENDPOINT)
 
     harvester = Sickle(OAI_ENDPOINT)
+
+    # https://www.mediawiki.org/wiki/Manual:Pywikibot/Create_your_own_script
+    # https://doc.wikimedia.org/pywikibot/master/api_ref/index.html
+    #commons = pywikibot.Site()
+    #logger.info('pywikibot: %r', commons._siteinfo)
+
     # print(harvester)
     #
     # for idx, set_ in enumerate(harvester.ListSets()):
