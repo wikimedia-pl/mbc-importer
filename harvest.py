@@ -15,6 +15,7 @@ from sickle import Sickle, models, OAIResponse
 DLIBRA_SERVER = 'http://mbc.cyfrowemazowsze.pl/'
 # DLIBRA_SERVER = 'https://www.wbc.poznan.pl/'
 OAI_ENDPOINT = f'{DLIBRA_SERVER}dlibra/oai-pmh-repository.xml'
+UPLOAD_COMMENT = 'Import MBC content'
 
 
 @dataclass
@@ -77,7 +78,7 @@ def get_content_url(record: models.Record) -> str:
     return url
 
 
-def upload_to_commons(record: RecordMeta):
+def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
     """
     Upload a given record to Commons
     """
@@ -87,7 +88,19 @@ def upload_to_commons(record: RecordMeta):
     # https://commons.wikimedia.org/wiki/File:Portret_Leona_Wagenfisza_(73487).jpg
     file_name = f'{record.title} ({record.record_numeric_id}).jpg'
 
-    file_desciption = """
+    file_name = file_name\
+        .replace(':', '')\
+        .replace('[', '')\
+        .replace(']', '')
+
+    file_page = pywikibot.FilePage(source=site, title=file_name)
+
+    if file_page.exists():
+        logger.info('%r exists, skipping an upload', file_page)
+        return False
+
+    # prepare a file description with all required details
+    file_description = """
 =={{int:filedesc}}==
 {{Artwork
  |artist = 
@@ -113,8 +126,15 @@ def upload_to_commons(record: RecordMeta):
         (record.title, record.date, record.record_numeric_id, record.record_numeric_id, record.record_numeric_id)
 
     logger.info('Record metadata: %r', record)
-    logger.info('Uploading "%s" ...', file_name)
-    logger.info('File description: %s', file_desciption)
+    logger.info('File page: %r', file_page)
+    logger.info('File description: %s', file_description)
+
+    return file_page.upload(
+        source=record.content_url,
+        text=file_description,
+        comment=UPLOAD_COMMENT,
+        report_success=True,
+    )
 
 
 def main():
@@ -126,6 +146,7 @@ def main():
     # https://www.mediawiki.org/wiki/Manual:Pywikibot/Create_your_own_script
     # https://doc.wikimedia.org/pywikibot/master/api_ref/index.html
     commons = pywikibot.Site()
+    commons.login()
     logger.info('pywikibot: %r', commons._siteinfo)
 
     # https://www.wbc.poznan.pl/dlibra/oai-pmh-repository.xml?verb=ListRecords&metadataPrefix=oai_dc&set=rootCollection:wbc:ContemporaryRegionalMagazines
@@ -150,14 +171,14 @@ def main():
             )
 
             # logger.info('Raw metadata: %r', record.metadata)
-            upload_to_commons(record=record_meta)
+            upload_to_commons(site=commons, record=record_meta)
 
         except:
             logger.error('Exception', exc_info=True)
             pass
 
         # DEBUG
-        if idx > 5:
+        if idx > 15:
             break
 
 
