@@ -27,6 +27,7 @@ class RecordMeta:
     record_id: str  # e.g. oai:mbc.cyfrowemazowsze.pl:59990
     source_id: str
     title: str
+    medium: str
     date: str
     content_url: str
     tags: List[str]
@@ -125,7 +126,7 @@ def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
  |artist = %s
  |description = {{pl|%s}}
  |date = %s
- |medium =
+ |medium = %s
  |institution = {{Institution:Mazovian Digital Library}}
  |notes = %s
  |accession number = [http://fbc.pionier.net.pl/id/oai:mbc.cyfrowemazowsze.pl:%d oai:mbc.cyfrowemazowsze.pl:%d]
@@ -138,11 +139,12 @@ def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
 {{PD-old-auto}}
 {{Mazovian Digital Library partnership}}
 
+[[Category:Media contributed by the Mazovian Digital Library]]
 [[Category:Media contributed by the Mazovian Digital Library – needing category‎]]
 
 [[Category:Uploaded with mbc-harvester]]
     """.strip() % \
-        (record.creator, record.title, record.date, record.notes,
+        (record.creator, record.title, record.date, record.medium, record.notes,
          record.record_numeric_id, record.record_numeric_id, record.record_numeric_id,
          record.source)
 
@@ -179,6 +181,7 @@ def main():
     for idx, record in enumerate(get_set(harvester, set_name)):
         logger.info('---')
         logger.info('Record #%d found: %r', idx+1, record)
+        # logger.info('Metadata: %r', record.metadata)
 
         # oai:mbc.cyfrowemazowsze.pl:59990
         try:
@@ -190,6 +193,7 @@ def main():
                 record_id=record.header.identifier,
                 source_id=source_id,
                 title=record.metadata['title'][0],
+                medium=record.metadata['type'][0],  # e.g. grafika
                 date=str(record.metadata['date'][0]).strip('[]'),
                 content_url=get_content_url(record),
                 tags=sorted(list(set(record.metadata['subject']))),
@@ -216,7 +220,7 @@ def main():
             pass
 
         # DEBUG
-        if idx > 15:
+        if idx > 2:
             break
 
 
