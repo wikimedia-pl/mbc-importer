@@ -1,13 +1,14 @@
 """
 List MBC sets
 """
+import json
 import logging
 from dataclasses import dataclass
 
 import pywikibot
 import requests
 
-from typing import Iterator, List
+from typing import Iterator, List, Tuple, Optional
 
 from lxml.etree import ElementBase
 from sickle import Sickle, models, OAIResponse
@@ -29,6 +30,10 @@ class RecordMeta:
     date: str
     content_url: str
     tags: List[str]
+
+    creator: Optional[str] = ''
+    notes: Optional[str] = ''
+    source: Optional[str] = ''
 
     @property
     def record_numeric_id(self) -> int:
@@ -78,11 +83,29 @@ def get_content_url(record: models.Record) -> str:
     return url
 
 
+def get_rdf_metadata(record_id: int) -> Iterator[Tuple[str, str]]:
+    """
+    Iterates over RDF metadata of the provided record
+    """
+    # @see http://mbc.cyfrowemazowsze.pl/dlibra/rdf.xml?type=e&id=77150
+    rdf_url = f'{DLIBRA_SERVER}/dlibra/rdf.xml?type=e&id={record_id}'
+    logging.info('Fetching RDF from <%s>', rdf_url)
+
+    resp = OAIResponse(http_response=requests.get(rdf_url), params=dict(verb='GetContent'))
+    root_node: ElementBase = next(resp.xml.iterchildren())
+    for node in root_node.iterchildren():
+        # {http://purl.org/dc/elements/1.1/}relation Tygodnik Illustrowany. 1890, Seria 5, T.2 nr 49, s. 371
+        tag_name = str(node.tag).replace('{http://purl.org/dc/elements/1.1/}', '')
+
+        yield tag_name, node.text
+
+
 def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
     """
     Upload a given record to Commons
     """
     logger = logging.getLogger(name='upload_to_commons')
+    logger.info('Record metadata: %r', record)
 
     # format a file name
     # https://commons.wikimedia.org/wiki/File:Portret_Leona_Wagenfisza_(73487).jpg
@@ -95,39 +118,40 @@ def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
 
     file_page = pywikibot.FilePage(source=site, title=file_name)
 
-    if file_page.exists():
-        logger.info('%r exists, skipping an upload', file_page)
-        return False
-
     # prepare a file description with all required details
     file_description = """
 =={{int:filedesc}}==
 {{Artwork
- |artist = 
+ |artist = %s
  |description = {{pl|%s}}
  |date = %s
  |medium =
  |institution = {{Institution:Mazovian Digital Library}}
- |notes =
+ |notes = %s
  |accession number = [http://fbc.pionier.net.pl/id/oai:mbc.cyfrowemazowsze.pl:%d oai:mbc.cyfrowemazowsze.pl:%d]
  |source = 
 * http://mbc.cyfrowemazowsze.pl/dlibra/docmetadata?id=%d
-
+* %s
 }}
 
 =={{int:license-header}}==
 {{PD-old-auto}}
 {{Mazovian Digital Library partnership}}
 
-[[Category:Media contributed by the Mazovian Digital Library (Ilustracja prasowa z XIX w.)]]
+[[Category:Media contributed by the Mazovian Digital Library – needing category‎]]
 
 [[Category:Uploaded with mbc-harvester]]
     """.strip() % \
-        (record.title, record.date, record.record_numeric_id, record.record_numeric_id, record.record_numeric_id)
+        (record.creator, record.title, record.date, record.notes,
+         record.record_numeric_id, record.record_numeric_id, record.record_numeric_id,
+         record.source)
 
-    logger.info('Record metadata: %r', record)
     logger.info('File page: %r', file_page)
     logger.info('File description: %s', file_description)
+
+    if file_page.exists():
+        logger.info('%r exists, skipping an upload', file_page)
+        return False
 
     return file_page.upload(
         source=record.content_url,
@@ -160,6 +184,7 @@ def main():
         try:
             # oai:mbc.cyfrowemazowsze.pl:59990 -> mbc.cyfrowemazowsze.pl
             source_id = str(record.header.identifier).split(':')[1]
+            record_id = int(str(record.header.identifier).split(':')[-1])
 
             record_meta = RecordMeta(
                 record_id=record.header.identifier,
@@ -170,7 +195,20 @@ def main():
                 tags=sorted(list(set(record.metadata['subject']))),
             )
 
-            # logger.info('Raw metadata: %r', record.metadata)
+            # fetch additional metadata from RDF endpoint
+            # http://mbc.cyfrowemazowsze.pl/dlibra/rdf.xml?type=e&id=77150
+            # notes = <dc:description xml:lang="pl">1 grafika : drzewor. ; 11,2x13,8 cm</dc:description>
+            # source = <dc:relation xml:lang="pl">Kłosy. 1886, t.43 nr 1105 s. 149</dc:relation>
+            for key, value in get_rdf_metadata(record_id=record_id):
+                # Biblioteka Publiczna m.st. Warszawy - Biblioteka Główna Województwa Mazowieckiego
+                if key == 'description' and 'Biblioteka' not in value:
+                    record_meta.notes = value
+                elif key == 'relation':
+                    record_meta.source = value
+                elif key == 'creator':
+                    record_meta.creator = value
+
+            # logger.info('Raw record: %s', json.dumps(record.metadata, indent=True))
             upload_to_commons(site=commons, record=record_meta)
 
         except:
