@@ -50,7 +50,7 @@ def get_set(instance: Sickle, set_name: str) -> Iterator[models.Record]:
     )
 
 
-def get_content_url(record: models.Record) -> str:
+def get_content_url(record: models.Record) -> Optional[str]:
     """
     Gets the full content URL for a given record
     """
@@ -71,6 +71,17 @@ def get_content_url(record: models.Record) -> str:
     </object-presentation>
     """
     resp = OAIResponse(http_response=requests.get(content_xml_url), params=dict(verb='GetContent'))
+
+    if not resp.xml:
+        content_type = str(resp.http_response.headers.get('Content-Type'))
+        logger.debug('Headers: %r', resp.http_response.headers)
+
+        # we got the image as an redirect, e.g. http://mbc.cyfrowemazowsze.pl/Content/54558
+        if content_type.startswith('image/'):
+            return resp.http_response.url
+
+        logger.warning('No XML found at <%s> ...', content_xml_url)
+        return None
 
     # 00064995_0000.jpg
     image_node: ElementBase = resp.xml.find('.//full-image')
@@ -213,13 +224,17 @@ def main():
             source_id = str(record.header.identifier).split(':')[1]
             record_id = int(str(record.header.identifier).split(':')[-1])
 
+            content_url = get_content_url(record)
+            if not content_url:
+                continue
+
             record_meta = RecordMeta(
                 record_id=record.header.identifier,
                 source_id=source_id,
                 title=record.metadata['title'][0],
                 medium=record.metadata['type'][0],  # e.g. grafika
                 date=str(record.metadata['date'][0]).strip('[]'),
-                content_url=get_content_url(record),
+                content_url=content_url,
                 tags=sorted(list(set(record.metadata['subject']))),
             )
 
