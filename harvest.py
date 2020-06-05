@@ -1,7 +1,6 @@
 """
 List MBC sets
 """
-import json
 import logging
 from dataclasses import dataclass
 
@@ -16,7 +15,7 @@ from sickle import Sickle, models, OAIResponse
 DLIBRA_SERVER = 'http://mbc.cyfrowemazowsze.pl/'
 # DLIBRA_SERVER = 'https://www.wbc.poznan.pl/'
 OAI_ENDPOINT = f'{DLIBRA_SERVER}dlibra/oai-pmh-repository.xml'
-UPLOAD_COMMENT = 'Import MBC content'
+UPLOAD_COMMENT = 'Importing MBC digital content'
 
 
 @dataclass
@@ -101,6 +100,25 @@ def get_rdf_metadata(record_id: int) -> Iterator[Tuple[str, str]]:
         yield tag_name, node.text
 
 
+def get_medium_for_record(record: RecordMeta) -> Optional[str]:
+    """
+    Returns medium for Commons
+    """
+    if record.medium == 'fotografia':
+        return 'black and white photography'
+
+    if record.medium == 'grafika':
+        if 'Drzeworyt' in record.tags:
+            return 'woodcut'
+
+        if 'Litografia' in record.tags:
+            return 'lithography'
+
+        return 'drawing'
+
+    return None
+
+
 def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
     """
     Upload a given record to Commons
@@ -112,12 +130,17 @@ def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
     # https://commons.wikimedia.org/wiki/File:Portret_Leona_Wagenfisza_(73487).jpg
     file_name = f'{record.title} ({record.record_numeric_id}).jpg'
 
-    file_name = file_name\
-        .replace(':', '')\
-        .replace('[', '')\
+    file_name = file_name \
+        .replace(':', '') \
+        .replace('[', '') \
         .replace(']', '')
 
     file_page = pywikibot.FilePage(source=site, title=file_name)
+
+    # e.g. medium = {{technique|black and white photography}}
+    medium = get_medium_for_record(record)
+    if medium:
+        medium = '{{{{technique|{}}}}}'.format(medium)
 
     # prepare a file description with all required details
     file_description = """
@@ -143,10 +166,11 @@ def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
 [[Category:Media contributed by the Mazovian Digital Library – needing category‎]]
 
 [[Category:Uploaded with mbc-harvester]]
-    """.strip() % \
-        (record.creator, record.title, record.date, record.medium, record.notes,
-         record.record_numeric_id, record.record_numeric_id, record.record_numeric_id,
-         record.source)
+    """.strip() % (
+        record.creator, record.title, record.date, medium, record.notes,
+        record.record_numeric_id, record.record_numeric_id, record.record_numeric_id,
+        record.source
+    )
 
     logger.info('File page: %r', file_page)
     logger.info('File description: %s', file_description)
@@ -165,7 +189,7 @@ def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
 
 def main():
     logger = logging.getLogger('oai-harvester')
-    logger.info('Using <%s> OAI endpoint',  OAI_ENDPOINT)
+    logger.info('Using <%s> OAI endpoint', OAI_ENDPOINT)
 
     harvester = Sickle(OAI_ENDPOINT)
 
@@ -173,14 +197,14 @@ def main():
     # https://doc.wikimedia.org/pywikibot/master/api_ref/index.html
     commons = pywikibot.Site()
     commons.login()
-    logger.info('pywikibot: %r', commons._siteinfo)
+    logger.info('pywikibot: %r', commons)
 
     # https://www.wbc.poznan.pl/dlibra/oai-pmh-repository.xml?verb=ListRecords&metadataPrefix=oai_dc&set=rootCollection:wbc:ContemporaryRegionalMagazines
     set_name = 'MDL:CD:Warwilustrpras'
 
     for idx, record in enumerate(get_set(harvester, set_name)):
         logger.info('---')
-        logger.info('Record #%d found: %r', idx+1, record)
+        logger.info('Record #%d found: %r', idx + 1, record)
         # logger.info('Metadata: %r', record.metadata)
 
         # oai:mbc.cyfrowemazowsze.pl:59990
