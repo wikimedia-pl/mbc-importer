@@ -153,6 +153,22 @@ def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
     if medium:
         medium = '{{{{technique|{}}}}}'.format(medium)
 
+    # TODO: add categories based on tags from RecordMeta
+    # http://mbc.cyfrowemazowsze.pl/dlibra/oai-pmh-repository.xml?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:mbc.cyfrowemazowsze.pl:73487
+    # e.g. 'Portrety - Polska - 19-20 w.' => 'Media contributed by the Mazovian Digital Library (Portrety XIX wiek)‎'
+    # e.g. 'Warszawa - służba zdrowia - 19 w.' => 'Media contributed by the Mazovian Digital Library (służba zdrowia)'
+    # https://commons.wikimedia.org/wiki/Category:Media_contributed_by_the_Mazovian_Digital_Library_by_topic
+    categories = [
+        'Uploaded with mbc-harvester',
+        'Media contributed by the Mazovian Digital Library',
+        'Media contributed by the Mazovian Digital Library – needing category‎',
+    ]
+
+    categories_wikitext = '\n'.join([
+        f"[[Category:{category}]]"
+        for category in categories
+    ])
+
     # prepare a file description with all required details
     file_description = """
 =={{int:filedesc}}==
@@ -173,14 +189,11 @@ def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
 {{PD-old-auto}}
 {{Mazovian Digital Library partnership}}
 
-[[Category:Media contributed by the Mazovian Digital Library]]
-[[Category:Media contributed by the Mazovian Digital Library – needing category‎]]
-
-[[Category:Uploaded with mbc-harvester]]
+%s
     """.strip() % (
         record.creator, record.title, record.date, medium, record.notes,
         record.record_numeric_id, record.record_numeric_id, record.record_numeric_id,
-        record.source
+        record.source, categories_wikitext
     )
 
     logger.info('File page: %r', file_page)
