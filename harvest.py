@@ -72,7 +72,7 @@ def get_content_url(record: models.Record) -> Optional[str]:
     """
     resp = OAIResponse(http_response=requests.get(content_xml_url), params=dict(verb='GetContent'))
 
-    if not resp.xml:
+    if resp.xml is None:
         content_type = str(resp.http_response.headers.get('Content-Type'))
         logger.debug('Headers: %r', resp.http_response.headers)
 
