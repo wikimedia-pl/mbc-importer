@@ -130,6 +130,25 @@ def get_medium_for_record(record: RecordMeta) -> Optional[str]:
     return None
 
 
+def get_categories_for_record(record: RecordMeta) -> List[str]:
+    """
+    Returns additional categories for a given record
+    """
+    categories = []
+
+    # http://mbc.cyfrowemazowsze.pl/dlibra/oai-pmh-repository.xml?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:mbc.cyfrowemazowsze.pl:73487
+    # e.g. 'Portrety - Polska - 19-20 w.' => 'Media contributed by the Mazovian Digital Library (Portrety XIX wiek)‎'
+    # e.g. 'Warszawa - służba zdrowia - 19 w.' => 'Media contributed by the Mazovian Digital Library (służba zdrowia)'
+    # https://commons.wikimedia.org/wiki/Category:Media_contributed_by_the_Mazovian_Digital_Library_by_topic
+    if 'Portrety - Polska - 19-20 w.' in record.tags:
+        categories.append('Media contributed by the Mazovian Digital Library (Portrety XIX wiek)‎')
+
+    if 'Warszawa - służba zdrowia - 19 w.' in record.tags:
+        categories.append('Media contributed by the Mazovian Digital Library (służba zdrowia)‎')
+
+    return categories
+
+
 def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
     """
     Upload a given record to Commons
@@ -153,16 +172,11 @@ def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
     if medium:
         medium = '{{{{technique|{}}}}}'.format(medium)
 
-    # TODO: add categories based on tags from RecordMeta
-    # http://mbc.cyfrowemazowsze.pl/dlibra/oai-pmh-repository.xml?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:mbc.cyfrowemazowsze.pl:73487
-    # e.g. 'Portrety - Polska - 19-20 w.' => 'Media contributed by the Mazovian Digital Library (Portrety XIX wiek)‎'
-    # e.g. 'Warszawa - służba zdrowia - 19 w.' => 'Media contributed by the Mazovian Digital Library (służba zdrowia)'
-    # https://commons.wikimedia.org/wiki/Category:Media_contributed_by_the_Mazovian_Digital_Library_by_topic
     categories = [
         'Uploaded with mbc-harvester',
         'Media contributed by the Mazovian Digital Library',
-        'Media contributed by the Mazovian Digital Library – needing category‎',
-    ]
+        'Needing category from the Mazovian Digital Library',
+    ] + get_categories_for_record(record)
 
     categories_wikitext = '\n'.join([
         f"[[Category:{category}]]"
@@ -272,7 +286,7 @@ def main():
             pass
 
         # DEBUG
-        if idx > 2:
+        if idx > 25:
             break
 
 
