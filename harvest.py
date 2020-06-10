@@ -176,6 +176,7 @@ def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
         'Uploaded with mbc-harvester',
         'Media contributed by the Mazovian Digital Library',
         'Needing category from the Mazovian Digital Library',
+        'Media contributed by the Mazovian Digital Library – needing category',
     ] + get_categories_for_record(record)
 
     categories_wikitext = '\n'.join([
@@ -286,7 +287,7 @@ def main():
             pass
 
         # DEBUG
-        if idx > 25:
+        if idx > 75:
             break
 
 
