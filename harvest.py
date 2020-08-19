@@ -12,10 +12,14 @@ from typing import Iterator, List, Tuple, Optional
 from lxml.etree import ElementBase
 from sickle import Sickle, models, OAIResponse
 
+# TODO: take these from env variables
 DLIBRA_SERVER = 'http://mbc.cyfrowemazowsze.pl/'
 # DLIBRA_SERVER = 'https://www.wbc.poznan.pl/'
 OAI_ENDPOINT = f'{DLIBRA_SERVER}dlibra/oai-pmh-repository.xml'
 UPLOAD_COMMENT = 'Importing MBC digital content'
+
+# https://www.wbc.poznan.pl/dlibra/oai-pmh-repository.xml?verb=ListRecords&metadataPrefix=oai_dc&set=rootCollection:wbc:ContemporaryRegionalMagazines
+OAI_SET_NAME = 'MDL:CD:Warwilustrpras'
 
 
 @dataclass
@@ -238,10 +242,7 @@ def main():
     commons.login()
     logger.info('pywikibot: %r', commons)
 
-    # https://www.wbc.poznan.pl/dlibra/oai-pmh-repository.xml?verb=ListRecords&metadataPrefix=oai_dc&set=rootCollection:wbc:ContemporaryRegionalMagazines
-    set_name = 'MDL:CD:Warwilustrpras'
-
-    for idx, record in enumerate(get_set(harvester, set_name)):
+    for idx, record in enumerate(get_set(harvester, OAI_SET_NAME)):
         logger.info('---')
         logger.info('Record #%d found: %r', idx + 1, record)
         # logger.info('Metadata: %r', record.metadata)
@@ -287,8 +288,8 @@ def main():
             pass
 
         # DEBUG
-        if idx > 75:
-            break
+        # if idx > 75:
+        #    break
 
 
 if __name__ == "__main__":
