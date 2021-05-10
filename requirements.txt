@@ -1,2 +1,2 @@
 Sickle==0.7.0
-pywikibot==3.0.20200508
+pywikibot==6.1.0
