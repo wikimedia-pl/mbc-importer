@@ -56,5 +56,9 @@ jobs:
         md5sum user-password.py
 
     - name: Run the importer
+      env:
+        # set up HTTP(S) proxy for requests library
+        HTTP_PROXY: ${{ secrets.HTTP_PROXY }}
+        HTTPS_PROXY: ${{ secrets.HTTP_PROXY }}
       run: |
         make harvest
