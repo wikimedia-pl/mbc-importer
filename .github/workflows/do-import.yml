@@ -43,9 +43,16 @@ jobs:
         python -m pip install --upgrade pip
         pip install wheel
         pip install -r requirements.txt
+
     - name: Prepare user-password.py
+      env:
+        USERNAME: ${{ secrets.PYWIKIBOT_USERNAME }}
+        PASSWORD: ${{ secrets.PYWIKIBOT_PASSWORD }}
       run: |
-        #
+        echo "('commons', 'commons', '${USERNAME}', '${PASSWORD}')" > user-password.py
+        chmod 600 user-password.py
+        md5sum user-password.py
+
     - name: Run the importer
       run: |
         python -V
