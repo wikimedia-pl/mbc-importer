@@ -51,8 +51,10 @@ jobs:
       run: |
         echo "('commons', 'commons', '${USERNAME}', '${PASSWORD}')" > user-password.py
         chmod 600 user-password.py
+
+        # should be 291f608b9b61853a21413daffbb25de0
         md5sum user-password.py
 
     - name: Run the importer
       run: |
-        python -V
+        make harvest
