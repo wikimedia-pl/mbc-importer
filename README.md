@@ -26,3 +26,11 @@ $ cat user-password.py
 ```
 python harvest.py
 ```
+
+## GitHub Actions
+
+You need to set up the following secrets in order to run the importer as a cron-triggered action:
+
+* `HTTP_PROXY` (e.g. `socks5://example.com:12345`)
+* `PYWIKIBOT_USERNAME`
+* `PYWIKIBOT_PASSWORD`
