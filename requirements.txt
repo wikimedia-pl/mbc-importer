@@ -1,2 +1,3 @@
 Sickle==0.7.0
 pywikibot==6.1.0
+requests[socks]==2.25.1
