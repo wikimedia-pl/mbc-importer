@@ -1,6 +1,6 @@
 # mbc-harvester
 
-A script harvesting [Mazowiecka Biblietka Cyfrowa collection"Warszawa w ilustracji prasowej XIX w."](http://mbc.cyfrowemazowsze.pl/dlibra/collectiondescription?dirids=231). Files are then uploaded on Wikimedia Commons.
+A script harvesting [Mazowiecka Biblietka Cyfrowa collection"Warszawa w ilustracji prasowej XIX w."](http://mbc.cyfrowemazowsze.pl/dlibra/collectiondescription?dirids=231). Files are then [uploaded on Wikimedia Commons](https://commons.wikimedia.org/wiki/Special:Contributions/Mazovian_Digital_Library_Upload).
 
 It can crawl any e-library that is powered by [OAI-compatible software](https://www.openarchives.org/), for instance [dLibra](https://dingo.psnc.pl/dlibra/).
 
