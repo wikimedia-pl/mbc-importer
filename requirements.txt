@@ -1,4 +1,4 @@
 Sickle==0.7.0
-pywikibot==6.6.1
+pywikibot==6.6.2
 requests[socks]==2.26.0
 mwparserfromhell>=0.5.0
