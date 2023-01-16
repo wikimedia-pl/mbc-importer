@@ -22,6 +22,8 @@ UPLOAD_COMMENT = 'Importing MBC digital content'
 OAI_SET_NAME = 'MDL:CD:Warwilustrpras'
 
 
+START_FROM_ITEM = 5005
+
 @dataclass
 class RecordMeta:
     """
@@ -243,6 +245,10 @@ def main():
     logger.info('pywikibot: %r', commons)
 
     for idx, record in enumerate(get_set(harvester, OAI_SET_NAME)):
+        if idx < START_FROM_ITEM:
+            logger.info('Skipping record #%d due to START_FROM_ITEM', idx)
+            continue
+
         logger.info('---')
         logger.info('Record #%d found: %r', idx + 1, record)
         # logger.info('Metadata: %r', record.metadata)
