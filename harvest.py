@@ -2,6 +2,7 @@
 List MBC sets
 """
 import logging
+import tempfile
 from dataclasses import dataclass
 
 import pywikibot
@@ -21,6 +22,8 @@ UPLOAD_COMMENT = 'Importing MBC digital content'
 # https://www.wbc.poznan.pl/dlibra/oai-pmh-repository.xml?verb=ListRecords&metadataPrefix=oai_dc&set=rootCollection:wbc:ContemporaryRegionalMagazines
 OAI_SET_NAME = 'MDL:CD:Warwilustrpras'
 
+
+START_FROM_ITEM = 5005
 
 @dataclass
 class RecordMeta:
@@ -222,12 +225,28 @@ def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
         logger.info('%r exists, skipping an upload', file_page)
         return False
 
-    return file_page.upload(
-        source=record.content_url,
-        text=file_description,
-        comment=UPLOAD_COMMENT,
-        report_success=True,
-    )
+    # now fetch the resource to a local temporary file
+    with tempfile.NamedTemporaryFile(prefix='mbc-harvest-') as temp_upload:
+        logger.info('Fetching <%s> into %s temporary file', record.content_url, temp_upload.name)
+
+        response = requests.get(record.content_url)
+
+        response_size = int(response.headers['content-length'] or 0) / 1024 / 1024
+        logger.info('HTTP %d (%.2f MB)', response.status_code, response_size)
+
+        # write the response to a temporary file
+        temp_upload.write(response.content)
+
+        # and upload from the file
+        ret = file_page.upload(
+            source=temp_upload.name,
+            text=file_description,
+            comment=UPLOAD_COMMENT,
+            report_success=True,
+            ignore_warnings=False,
+        )
+
+    return ret
 
 
 def main():
@@ -243,6 +262,10 @@ def main():
     logger.info('pywikibot: %r', commons)
 
     for idx, record in enumerate(get_set(harvester, OAI_SET_NAME)):
+        if idx < START_FROM_ITEM:
+            logger.info('Skipping record #%d due to START_FROM_ITEM', idx)
+            continue
+
         logger.info('---')
         logger.info('Record #%d found: %r', idx + 1, record)
         # logger.info('Metadata: %r', record.metadata)
