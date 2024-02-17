@@ -6,6 +6,7 @@ import tempfile
 from dataclasses import dataclass
 
 import pywikibot
+import urllib3
 from requests import Session
 
 from typing import Iterator, List, Tuple, Optional
@@ -29,6 +30,7 @@ START_FROM_ITEM = 5005
 http_session = Session()
 http_session.headers['user-agent'] = 'mbc-harvest (+https://github.com/wikimedia-pl/mbc-importer)'
 http_session.verify = False  # prevent "certificate verify failed: unable to get local issuer certificate" error
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 @dataclass
