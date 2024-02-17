@@ -5,5 +5,5 @@ user-password.py
 
 apicache-py3/
 harvest.log
-pywikibot.lwp
+*.lwp
 throttle.ctrl

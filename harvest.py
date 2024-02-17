@@ -6,7 +6,7 @@ import tempfile
 from dataclasses import dataclass
 
 import pywikibot
-import requests
+from requests import Session
 
 from typing import Iterator, List, Tuple, Optional
 
@@ -24,6 +24,12 @@ OAI_SET_NAME = 'MDL:CD:Warwilustrpras'
 
 
 START_FROM_ITEM = 5005
+
+# prepare the HTTP clint
+http_session = Session()
+http_session.headers['user-agent'] = 'mbc-harvest (+https://github.com/wikimedia-pl/mbc-importer)'
+http_session.verify = False  # prevent "certificate verify failed: unable to get local issuer certificate" error
+
 
 @dataclass
 class RecordMeta:
@@ -77,7 +83,7 @@ def get_content_url(record: models.Record) -> Optional[str]:
     </presentation-elements>
     </object-presentation>
     """
-    resp = OAIResponse(http_response=requests.get(content_xml_url), params=dict(verb='GetContent'))
+    resp = OAIResponse(http_response=http_session.get(content_xml_url), params=dict(verb='GetContent'))
 
     if resp.xml is None:
         content_type = str(resp.http_response.headers.get('Content-Type'))
@@ -109,7 +115,7 @@ def get_rdf_metadata(record_id: int) -> Iterator[Tuple[str, str]]:
     rdf_url = f'{DLIBRA_SERVER}/dlibra/rdf.xml?type=e&id={record_id}'
     logging.info('Fetching RDF from <%s>', rdf_url)
 
-    resp = OAIResponse(http_response=requests.get(rdf_url), params=dict(verb='GetContent'))
+    resp = OAIResponse(http_response=http_session.get(rdf_url), params=dict(verb='GetContent'))
     root_node: ElementBase = next(resp.xml.iterchildren())
     for node in root_node.iterchildren():
         # {http://purl.org/dc/elements/1.1/}relation Tygodnik Illustrowany. 1890, Seria 5, T.2 nr 49, s. 371
@@ -229,7 +235,7 @@ def upload_to_commons(site: pywikibot.Site, record: RecordMeta) -> bool:
     with tempfile.NamedTemporaryFile(prefix='mbc-harvest-') as temp_upload:
         logger.info('Fetching <%s> into %s temporary file', record.content_url, temp_upload.name)
 
-        response = requests.get(record.content_url)
+        response = http_session.get(record.content_url)
 
         response_size = int(response.headers['content-length'] or 0) / 1024 / 1024
         logger.info('HTTP %d (%.2f MB)', response.status_code, response_size)
@@ -254,6 +260,9 @@ def main():
     logger.info('Using <%s> OAI endpoint', OAI_ENDPOINT)
 
     harvester = Sickle(OAI_ENDPOINT)
+    harvester.request_args = {
+        'verify': http_session.verify
+    }
 
     # https://www.mediawiki.org/wiki/Manual:Pywikibot/Create_your_own_script
     # https://doc.wikimedia.org/pywikibot/master/api_ref/index.html
