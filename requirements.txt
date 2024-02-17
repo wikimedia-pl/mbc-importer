@@ -1,3 +1,4 @@
+certifi==2024.2.2
 Sickle==0.7.0
 pywikibot==8.6.0
 requests[socks]==2.31.0
