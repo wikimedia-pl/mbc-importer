@@ -2,6 +2,7 @@
 *.swp
 env
 user-password.py
+__pycache__/*
 
 apicache-py3/
 harvest.log
