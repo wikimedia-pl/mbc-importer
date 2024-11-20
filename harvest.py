@@ -125,6 +125,8 @@ def main():
     logger.info('Using <%s> OAI endpoint', OAI_ENDPOINT)
 
     harvester = Sickle(OAI_ENDPOINT)
+
+    # skip "certificate verify failed: unable to get local issuer certificate"
     harvester.request_args = {
         'verify': http_session.verify
     }

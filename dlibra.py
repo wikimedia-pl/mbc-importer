@@ -54,14 +54,26 @@ def get_set(instance: Sickle, set_name: str) -> Iterator[models.Record]:
     )
 
 
+def get_presentation_data_url(record: models.Record) -> str:
+    """
+    Returns URL to the XML doc with the record metadata
+
+    curl https://mbc.cyfrowemazowsze.pl/Content/59154/PresentationData.xml
+    """
+    ident: str = record.header.identifier  # oai:mbc.cyfrowemazowsze.pl:59154
+    parts = ident.split(':')
+
+    return f'https://{parts[1]}/Content/{parts[2]}/PresentationData.xml'
+
+
+
 def get_content_url(record: models.Record) -> Optional[str]:
     """
     Gets the full content URL for a given record
     """
     logger = logging.getLogger('get_content_url')
 
-    # ('identifier', ['http://mbc.cyfrowemazowsze.pl/Content/59990', ...
-    content_xml_url = record.metadata['identifier'][0]
+    content_xml_url = get_presentation_data_url(record)
     logger.debug('Fetching content URL from <%s> ...', content_xml_url)
 
     """
@@ -87,14 +99,16 @@ def get_content_url(record: models.Record) -> Optional[str]:
         logger.warning('No XML found at <%s> ...', content_xml_url)
         return None
 
-    print(resp.raw, content_xml_url); exit(1)
-
     # 00064995_0000.jpg
     image_node: ElementBase = resp.xml.find('.//full-image')
 
     # this will become
     # http://mbc.cyfrowemazowsze.pl/Content/61991/00066224_0000.jpg
-    url = f'{content_xml_url}/{image_node.text}'
+
+    ident: str = record.header.identifier  # oai:mbc.cyfrowemazowsze.pl:59154
+    parts = ident.split(':')
+
+    url = f'https://{parts[1]}/Content/{parts[2]}/{image_node.text}'
     logger.debug('Content URL: <%s>', url)
 
     return url
