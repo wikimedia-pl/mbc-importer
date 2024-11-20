@@ -56,11 +56,11 @@ jobs:
         md5sum user-password.py
 
     - name: Run the importer
-      env:
+#      env:
         # set up HTTP(S) proxy for requests library
         # https://docs.python-requests.org/en/master/user/advanced/#socks
         # e.g. socks5://example.com:12345
-        HTTP_PROXY: ${{ secrets.HTTP_PROXY }}
-        HTTPS_PROXY: ${{ secrets.HTTP_PROXY }}
+#        HTTP_PROXY: ${{ secrets.HTTP_PROXY }}
+#        HTTPS_PROXY: ${{ secrets.HTTP_PROXY }}
       run: |
         make harvest
