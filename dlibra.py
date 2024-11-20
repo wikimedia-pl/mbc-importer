@@ -58,12 +58,18 @@ def get_presentation_data_url(record: models.Record) -> str:
     """
     Returns URL to the XML doc with the record metadata
 
-    curl https://mbc.cyfrowemazowsze.pl/Content/59154/PresentationData.xml
+    It can either redirect to an XML metadata or to an image
+
+    curl https://mbc.cyfrowemazowsze.pl/Content/59154/
+    -> https://mbc.cyfrowemazowsze.pl/Content/59154/PresentationData.xml
+
+    curl https://mbc.cyfrowemazowsze.pl/Content/54192
+    -> https://mbc.cyfrowemazowsze.pl/Content/54192/Galeria/00059118-0001.jpg
     """
     ident: str = record.header.identifier  # oai:mbc.cyfrowemazowsze.pl:59154
     parts = ident.split(':')
 
-    return f'https://{parts[1]}/Content/{parts[2]}/PresentationData.xml'
+    return f'https://{parts[1]}/Content/{parts[2]}'
 
 
 

@@ -163,14 +163,14 @@ def main():
                 medium=record.metadata['type'][0],  # e.g. grafika
                 date=str(record.metadata['date'][0]).strip('[]'),
                 content_url=content_url,
-                tags=sorted(list(set(record.metadata['subject']))),
+                tags=sorted(list(set(record.metadata.get('subject', [])))),
             )
 
             # fetch additional metadata from RDF endpoint
             # http://mbc.cyfrowemazowsze.pl/dlibra/rdf.xml?type=e&id=77150
             # notes = <dc:description xml:lang="pl">1 grafika : drzewor. ; 11,2x13,8 cm</dc:description>
             # source = <dc:relation xml:lang="pl">Kłosy. 1886, t.43 nr 1105 s. 149</dc:relation>
-            for key, value in get_rdf_metadata(record_id=record_id):
+            for key, value in get_rdf_metadata(DLIBRA_SERVER, record_id):
                 # Biblioteka Publiczna m.st. Warszawy - Biblioteka Główna Województwa Mazowieckiego
                 if key == 'description' and 'Biblioteka' not in value:
                     record_meta.notes = value

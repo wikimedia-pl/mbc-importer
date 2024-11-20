@@ -48,7 +48,7 @@ def get_test_record() -> Record:
 
 def test_get_presentation_data_url():
     record = get_test_record()
-    assert get_presentation_data_url(record) == 'https://mbc.cyfrowemazowsze.pl/Content/59154/PresentationData.xml'
+    assert get_presentation_data_url(record) == 'https://mbc.cyfrowemazowsze.pl/Content/59154'
 
 
 def test_get_content_url():
@@ -57,7 +57,14 @@ def test_get_content_url():
     assert record.header.identifier == 'oai:mbc.cyfrowemazowsze.pl:59154'
     assert record.get_metadata().get('date') == ['[1892]']
     assert record.get_metadata().get('language') == ['pol']
+    assert get_presentation_data_url(record) == 'https://mbc.cyfrowemazowsze.pl/Content/59154'
     assert get_content_url(record) == 'https://mbc.cyfrowemazowsze.pl/Content/59154/00064692_0000.jpg'
+
+    # this record does not have the XML metadata - it just redirect to an image
+    # https://mbc.cyfrowemazowsze.pl/Content/54192/Galeria/00059118-0001.jpg
+    record.header.identifier = 'oai:mbc.cyfrowemazowsze.pl:54192'
+    assert get_presentation_data_url(record) == 'https://mbc.cyfrowemazowsze.pl/Content/54192'
+    assert get_content_url(record) == 'https://mbc.cyfrowemazowsze.pl/Content/54192/Galeria/00059118-0001.jpg'
 
 
 def test_get_set():
