@@ -186,7 +186,7 @@ def main():
             logger.error('Exception', exc_info=True)
             pass
 
-        break  # DEBUG
+        # break  # DEBUG
 
         # DEBUG
         # if idx > 75:
