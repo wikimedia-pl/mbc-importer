@@ -18,10 +18,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.9
+    - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.9
+        python-version: 3.13
 
 
     # https://github.com/actions/cache/blob/main/examples.md#using-pip-to-get-cache-location
@@ -56,11 +56,11 @@ jobs:
         md5sum user-password.py
 
     - name: Run the importer
-#      env:
+      env:
         # set up HTTP(S) proxy for requests library
         # https://docs.python-requests.org/en/master/user/advanced/#socks
         # e.g. socks5://example.com:12345
-#        HTTP_PROXY: ${{ secrets.HTTP_PROXY }}
-#        HTTPS_PROXY: ${{ secrets.HTTP_PROXY }}
+        HTTP_PROXY: ${{ secrets.HTTP_PROXY }}
+        HTTPS_PROXY: ${{ secrets.HTTP_PROXY }}
       run: |
         make harvest
