@@ -5,6 +5,8 @@ user-password.py
 __pycache__/*
 
 apicache-py3/
-harvest.log
+apicache/
+*.log
+log
 *.lwp
 throttle.ctrl
