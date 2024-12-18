@@ -174,3 +174,9 @@ def get_categories_for_record(record: RecordMeta) -> List[str]:
 
     return categories
 
+
+class SickleWithRequestsSession(Sickle):
+    def _request(self, kwargs):
+        if self.http_method == 'GET':
+            return http_session.get(self.endpoint, params=kwargs, **self.request_args)
+        return http_session.post(self.endpoint, data=kwargs, **self.request_args)

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 List MBC sets
 """
@@ -7,7 +8,7 @@ import tempfile
 import pywikibot
 
 from sickle import Sickle
-from dlibra import get_categories_for_record, get_content_url, get_medium_for_record, get_rdf_metadata, get_set, http_session, RecordMeta
+from dlibra import get_categories_for_record, get_content_url, get_medium_for_record, get_rdf_metadata, get_set, http_session, RecordMeta, SickleWithRequestsSession
 
 
 # TODO: take these from env variables
@@ -21,7 +22,7 @@ OAI_SET_NAME = 'MDL:CD:Warwilustrpras'
 
 
 START_FROM_ITEM = 0
-# START_FROM_ITEM = 5005
+# START_FROM_ITEM = 130
 
 
 
@@ -124,7 +125,8 @@ def main():
     logger = logging.getLogger('oai-harvester')
     logger.info('Using <%s> OAI endpoint', OAI_ENDPOINT)
 
-    harvester = Sickle(OAI_ENDPOINT)
+    # use the "requests" library Session, i.e. reuse the same connection in-between requests
+    harvester = SickleWithRequestsSession(OAI_ENDPOINT)
 
     # skip "certificate verify failed: unable to get local issuer certificate"
     harvester.request_args = {
