@@ -9,7 +9,7 @@ import urllib3
 from dataclasses import dataclass
 from typing import Iterator, List, Tuple, Optional
 
-from lxml.etree import ElementBase
+from lxml.etree import ElementBase, Error as lxmlError
 from requests import Session
 from sickle import Sickle, models, OAIResponse
 
@@ -94,7 +94,14 @@ def get_content_url(record: models.Record) -> Optional[str]:
     """
     resp = OAIResponse(http_response=http_session.get(content_xml_url), params=dict(verb='GetContent'))
 
-    if resp.xml is None:
+    try:
+        # lxml.etree.XMLSyntaxError: Document is empty, line 1, column 1
+        xml = resp.xml
+    except lxmlError as ex:
+        logger.error('XML parsing failed', exc_info=True)
+        xml = None
+
+    if xml is None:
         content_type = str(resp.http_response.headers.get('Content-Type'))
         logger.debug('Headers: %r', resp.http_response.headers)
 
