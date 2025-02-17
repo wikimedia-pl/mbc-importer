@@ -1,4 +1,4 @@
-certifi==2024.12.14
+certifi==2025.1.31
 Sickle==0.7.0
 pytest==8.3.4
 pywikibot==9.6.2
