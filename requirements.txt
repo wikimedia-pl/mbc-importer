@@ -1,6 +1,6 @@
 certifi==2026.5.20
 Sickle==0.7.0
 pytest==9.0.3
-pywikibot==11.2.0
+pywikibot==11.3.0
 requests[socks]==2.33.1
 mwparserfromhell>=0.7.2
