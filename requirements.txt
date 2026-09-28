@@ -1,4 +1,4 @@
-certifi==2026.5.20
+certifi==2026.7.22
 Sickle==0.7.0
 pytest==9.1.1
 pywikibot==11.7.0
